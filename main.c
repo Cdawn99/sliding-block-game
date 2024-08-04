@@ -88,8 +88,8 @@ int main(void) {
 
         if (!coin.exists) {
             do {
-                coin.sprite.x = rand() % SCREEN_WIDTH;
-                coin.sprite.y = rand() % SCREEN_HEIGHT;
+                coin.sprite.x = rand() % (SCREEN_WIDTH - (int)coin.sprite.width);
+                coin.sprite.y = rand() % (SCREEN_HEIGHT - (int)coin.sprite.height);
             } while (CheckCollisionRecs(coin.sprite, player_sprite));
             coin.exists = true;
         } else if (CheckCollisionRecs(coin.sprite, player_sprite)) {
