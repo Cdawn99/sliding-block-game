@@ -16,7 +16,7 @@ cmake --build .
 ```
 [X] Base game
 [X] Physics-based movement
-[ ] Collectable coins to increase score
+[X] Collectable coins to increase score
 [ ] Enemy block that moves around
     Collisions with said enemy decrease the score
 [ ] Collision at score 0 results in game over (close the game)

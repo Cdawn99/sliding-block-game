@@ -9,6 +9,7 @@ typedef struct Entity {
     Vector2 position;
     Vector2 velocity;
     float max_velocity; /**< The entity's max velocity must be positive. */
+    unsigned int score;
 } Entity;
 
 /**
