@@ -10,20 +10,15 @@ void entity_update_position(Entity *e, float dt) {
 void entity_apply_acceleration(Entity *e, Vector2 acc, float dt) {
     assert(e && "entity must be not NULL");
 
-    e->velocity.x += acc.x * dt;
-    e->velocity.y += acc.y * dt;
+    e->velocity = Vector2Add(e->velocity, Vector2Scale(acc, dt));
 
-    if (e->velocity.x < -e->max_velocity) {
-        e->velocity.x = -e->max_velocity;
-    }
-    if (e->velocity.x > e->max_velocity) {
-        e->velocity.x = e->max_velocity;
-    }
-
-    if (e->velocity.y < -e->max_velocity) {
-        e->velocity.y = -e->max_velocity;
-    }
-    if (e->velocity.y > e->max_velocity) {
-        e->velocity.y = e->max_velocity;
-    }
+    Vector2 min = {
+        .x = -e->max_velocity,
+        .y = -e->max_velocity,
+    };
+    Vector2 max = {
+        .x = e->max_velocity,
+        .y = e->max_velocity,
+    };
+    e->velocity = Vector2Clamp(e->velocity, min, max);
 }

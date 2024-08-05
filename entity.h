@@ -2,14 +2,17 @@
 #define ENTITY_H
 
 #include "raylib.h"
+#include "raymath.h"
+
 #include <assert.h>
 #include <math.h>
 
 typedef struct Entity {
-    Vector2 position;
+    Vector2 position;   /**< The location of the entity's center. */
     Vector2 velocity;
     float max_velocity; /**< The entity's max velocity must be positive. */
     unsigned int score;
+    Rectangle sprite;
 } Entity;
 
 /**
@@ -23,7 +26,8 @@ void entity_update_position(Entity *e, float dt);
 
 /**
  * Apply an instantaneous acceleration to the
- * given entity.
+ * given entity. The velocity is clamped according
+ * to the entity's max_velocity.
  *
  * @param e The given entity.
  * @param acc The acceleration to be applied.

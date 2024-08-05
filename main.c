@@ -1,6 +1,8 @@
 #include "entity.h"
+
 #include "raymath.h"
 #include "raylib.h"
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +13,23 @@
 #define FPS 60
 
 #define ACCELERATION_MAGNITUDE 100.0f
-#define FRICTION_COEFFICIENT 0.3f
+#define FRICTION_COEFFICIENT 0.2f
+
+#define PLAYER_WIDTH 50.0f
+#define PLAYER_HEIGHT 50.0f
+#define PLAYER_MAX_V 300.0f
+
+void apply_boundary_conditions(Entity *e) {
+    if ((e->velocity.x > 0 && e->sprite.x + e->sprite.width >= SCREEN_WIDTH)
+        || (e->velocity.x < 0 && e->sprite.x <= 0)) {
+        e->velocity.x = -e->velocity.x;
+    }
+
+    if ((e->velocity.y > 0 && e->sprite.y <= 0)
+        || (e->velocity.y < 0 && e->sprite.y + e->sprite.height >= SCREEN_HEIGHT)) {
+        e->velocity.y = -e->velocity.y;
+    }
+}
 
 int main(void) {
     srand(time(NULL));
@@ -19,13 +37,12 @@ int main(void) {
     Entity player = {
         .position = {.x = SCREEN_WIDTH/2.0f, .y = SCREEN_HEIGHT/2.0f},
         .velocity = {0},
-        .max_velocity = 300.0f,
+        .max_velocity = PLAYER_MAX_V,
         .score = 0,
-    };
-
-    Rectangle player_sprite = {
-        .width = 50.0f,
-        .height = 50.0f,
+        .sprite = {
+            .width = PLAYER_WIDTH,
+            .height = PLAYER_HEIGHT,
+        },
     };
 
     struct { Rectangle sprite; bool exists; } coin = {
@@ -55,34 +72,16 @@ int main(void) {
             acceleration.y /= sqrt(2);
         }
 
-        Vector2 friction = {
-            .x = player.velocity.x * FRICTION_COEFFICIENT,
-            .y = player.velocity.y * FRICTION_COEFFICIENT,
-        };
-
-        // Normalize diagonal friction to have the same magnitude
-        // as horizontal/vertical friction.
-        if (friction.x != 0 && friction.y != 0) {
-            friction.x /= sqrt(2);
-            friction.y /= sqrt(2);
-        }
+        Vector2 friction = Vector2Scale(player.velocity, FRICTION_COEFFICIENT);
 
         Vector2 total_acceleration = Vector2Subtract(acceleration, friction);
 
         entity_apply_acceleration(&player, total_acceleration, dt);
 
-        player_sprite.x = player.position.x - player_sprite.width/2.0f;
-        player_sprite.y = player.position.y - player_sprite.height/2.0f;
+        player.sprite.x = player.position.x - player.sprite.width/2.0f;
+        player.sprite.y = player.position.y - player.sprite.height/2.0f;
 
-        if ((player.velocity.x > 0 && player_sprite.x + player_sprite.width >= SCREEN_WIDTH)
-            || (player.velocity.x < 0 && player_sprite.x <= 0)) {
-            player.velocity.x = -player.velocity.x;
-        }
-
-        if ((player.velocity.y > 0 && player_sprite.y <= 0)
-            || (player.velocity.y < 0 && player_sprite.y + player_sprite.height >= SCREEN_HEIGHT)) {
-            player.velocity.y = -player.velocity.y;
-        }
+        apply_boundary_conditions(&player);
 
         entity_update_position(&player, dt);
 
@@ -90,9 +89,9 @@ int main(void) {
             do {
                 coin.sprite.x = rand() % (SCREEN_WIDTH - (int)coin.sprite.width);
                 coin.sprite.y = rand() % (SCREEN_HEIGHT - (int)coin.sprite.height);
-            } while (CheckCollisionRecs(coin.sprite, player_sprite));
+            } while (CheckCollisionRecs(coin.sprite, player.sprite));
             coin.exists = true;
-        } else if (CheckCollisionRecs(coin.sprite, player_sprite)) {
+        } else if (CheckCollisionRecs(coin.sprite, player.sprite)) {
             coin.exists = false;
             player.score++;
             sprintf(score_text, "Score: %d", player.score);
@@ -101,7 +100,7 @@ int main(void) {
         BeginDrawing();
             ClearBackground(RAYWHITE);
 
-            DrawRectangleRec(player_sprite, PURPLE);
+            DrawRectangleRec(player.sprite, PURPLE);
 
             if (coin.exists) {
                 DrawRectangleRec(coin.sprite, GOLD);
