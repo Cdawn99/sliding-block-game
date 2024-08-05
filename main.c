@@ -31,6 +31,33 @@ void apply_boundary_conditions(Entity *e) {
     }
 }
 
+void move_player(Entity *p, float dt) {
+    Vector2 acceleration = {
+        .x = (IsKeyDown(KEY_RIGHT) - IsKeyDown(KEY_LEFT)) * ACCELERATION_MAGNITUDE,
+        .y = (IsKeyDown(KEY_UP) - IsKeyDown(KEY_DOWN)) * ACCELERATION_MAGNITUDE,
+    };
+
+    // Normalize diagonal acceleration to have the same magnitude
+    // as horizontal/vertical acceleration.
+    if (acceleration.x != 0 && acceleration.y != 0) {
+        acceleration.x /= sqrt(2);
+        acceleration.y /= sqrt(2);
+    }
+
+    Vector2 friction = Vector2Scale(p->velocity, FRICTION_COEFFICIENT);
+
+    Vector2 total_acceleration = Vector2Subtract(acceleration, friction);
+
+    entity_apply_acceleration(p, total_acceleration, dt);
+
+    p->sprite.x = p->position.x - p->sprite.width/2.0f;
+    p->sprite.y = p->position.y - p->sprite.height/2.0f;
+
+    apply_boundary_conditions(p);
+
+    entity_update_position(p, dt);
+}
+
 int main(void) {
     srand(time(NULL));
 
@@ -60,30 +87,7 @@ int main(void) {
     const float dt = 1.0f/FPS;
 
     while (!WindowShouldClose()) {
-        Vector2 acceleration = {
-            .x = (IsKeyDown(KEY_RIGHT) - IsKeyDown(KEY_LEFT)) * ACCELERATION_MAGNITUDE,
-            .y = (IsKeyDown(KEY_UP) - IsKeyDown(KEY_DOWN)) * ACCELERATION_MAGNITUDE,
-        };
-
-        // Normalize diagonal acceleration to have the same magnitude
-        // as horizontal/vertical acceleration.
-        if (acceleration.x != 0 && acceleration.y != 0) {
-            acceleration.x /= sqrt(2);
-            acceleration.y /= sqrt(2);
-        }
-
-        Vector2 friction = Vector2Scale(player.velocity, FRICTION_COEFFICIENT);
-
-        Vector2 total_acceleration = Vector2Subtract(acceleration, friction);
-
-        entity_apply_acceleration(&player, total_acceleration, dt);
-
-        player.sprite.x = player.position.x - player.sprite.width/2.0f;
-        player.sprite.y = player.position.y - player.sprite.height/2.0f;
-
-        apply_boundary_conditions(&player);
-
-        entity_update_position(&player, dt);
+        move_player(&player, dt);
 
         if (!coin.exists) {
             do {
