@@ -19,6 +19,7 @@ cmake --build .
 [X] Collectable coins to increase score
 [X] Enemy block that moves around
     Collisions with said enemy decrease the score
+[X] Collision at score 0 results in game over (close game)
 [ ] Start menu
 [ ] Collision at score 0 results in game over (return to start menu)
 [ ] Improve enemy movement
