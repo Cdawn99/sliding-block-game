@@ -47,7 +47,7 @@ void entity_move(Entity *e, Vector2 acceleration, float dt, int screen_width, in
 }
 
 bool entity_elastic_collision(Entity *e1, Entity *e2) {
-    static unsigned int grace = 0;
+    static unsigned int grace = 10;
     bool collided = false;
 
     if (grace == 0 && CheckCollisionRecs(e1->sprite, e2->sprite)) {

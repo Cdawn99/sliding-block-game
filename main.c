@@ -103,6 +103,8 @@ int main(void) {
             if (player.score > 0) {
                 player.score--;
                 sprintf(score_text, "Score: %d", player.score);
+            } else {
+                break;
             }
         }
 
