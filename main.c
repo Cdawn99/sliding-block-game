@@ -1,7 +1,7 @@
 #include "entity.h"
 
-#include "raymath.h"
-#include "raylib.h"
+#include <raylib.h>
+#include <raymath.h>
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -46,13 +46,18 @@ static Vector2 get_player_acceleration(Entity *player) {
 }
 
 static Vector2 get_enemy_acceleration(Entity *enemy) {
+    static int tick = 0;
+    static const int max_tick = 300;
+
     // Relative to the screen's center.
-    Vector2 pos = Vector2Subtract(enemy->position, (Vector2){.x = SCREEN_WIDTH/2.0f, .y = SCREEN_HEIGHT/2.0f});
+    Vector2 pos = Vector2Subtract((Vector2){.x = SCREEN_WIDTH/2.0f, .y = SCREEN_HEIGHT/2.0f}, enemy->position);
     pos = Vector2Scale(Vector2Normalize(pos), ACCELERATION_MAGNITUDE);
-    return (Vector2){
-        .x = -pos.y,
-        .y = pos.x,
-    };
+
+    Vector2 result = Vector2Rotate(pos, 2.0f * PI * tick++ / max_tick);
+
+    tick = (tick + 1) % max_tick;
+
+    return result;
 }
 
 int main(void) {
@@ -73,7 +78,7 @@ int main(void) {
     Entity enemy = {
         .position = {.x = SCREEN_WIDTH/2.0f, .y = SCREEN_HEIGHT/3.0f},
         .velocity = {.x = rand_float()*PLAYER_MAX_V/2.0f, .y = rand_float()*PLAYER_MAX_V/2.0f},
-        .max_velocity = 2*PLAYER_MAX_V,
+        .max_velocity = PLAYER_MAX_V,
         .score = 1,
         .sprite = {
             .width = ENTITY_WIDTH,
