@@ -99,9 +99,9 @@ int main(void) {
 
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sliding block");
     SetTargetFPS(FPS);
-    const float dt = 1.0f/FPS;
 
     while (!WindowShouldClose()) {
+        const float dt = GetFrameTime();
         bool collided = entity_elastic_collision(&player, &enemy);
 
         if (collided) {

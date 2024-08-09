@@ -22,6 +22,6 @@ cmake --build .
 [X] Collision at score 0 results in game over (close game)
 [ ] Start menu
 [ ] Collision at score 0 results in game over (return to start menu)
-[ ] Improve enemy movement
+[X] Improve enemy movement
 [ ] High-score scoreboard
 ```
