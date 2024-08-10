@@ -12,6 +12,11 @@
 #define SCREEN_HEIGHT 540
 #define FPS 60
 
+#define BOX_SPACING 10
+#define EXTRA_BOX_SIZE 15
+#define BOX_COLOR BLUE
+#define BOX_COLOR_HOVERED SKYBLUE
+
 #define ACCELERATION_MAGNITUDE 100.0f
 #define FRICTION_COEFFICIENT 0.2f
 
@@ -20,6 +25,12 @@
 
 #define PLAYER_MAX_V 300.0f
 
+typedef enum GameState {
+    GAME_START_MENU,
+    GAME_PLAYING,
+    GAME_EXIT,
+} GameState;
+
 typedef struct Coin {
     Rectangle sprite;
     bool exists;
@@ -27,6 +38,107 @@ typedef struct Coin {
 } Coin;
 
 char score_text[20] = "Score: 0";
+
+static GameState start_menu(void) {
+    Vector2 center = {
+        .x = SCREEN_WIDTH/2.0f,
+        .y = SCREEN_HEIGHT/2.0f
+    };
+
+    char start_text[] = "Start";
+    Vector2 start_size = MeasureTextEx(GetFontDefault(), start_text, 40, 4);
+
+    char hs_text[] = "High score";
+    Vector2 hs_size = MeasureTextEx(GetFontDefault(), hs_text, 40, 4);
+
+    char exit_text[] = "Exit";
+    Vector2 exit_size = MeasureTextEx(GetFontDefault(), exit_text, 40, 4);
+
+    // Since the 'High score' text is the largest, box size will be dictated by it.
+    Vector2 pos = Vector2Subtract(center, Vector2Scale(hs_size, 1.0f/2.0f));
+
+    Rectangle start_box = {
+        .width = hs_size.x + EXTRA_BOX_SIZE,
+        .height = hs_size.y + EXTRA_BOX_SIZE,
+        .x = pos.x - EXTRA_BOX_SIZE/2.0f,
+        .y = pos.y - EXTRA_BOX_SIZE/2.0f,
+    };
+    Color start_box_color = BOX_COLOR;
+
+    Rectangle hs_box = start_box;
+    hs_box.y += start_box.height + BOX_SPACING;
+    Color hs_box_color = BOX_COLOR;
+
+    Rectangle exit_box = hs_box;
+    exit_box.y += hs_box.height + BOX_SPACING;
+    Color exit_box_color = BOX_COLOR;
+
+    Vector2 start_pos = Vector2Subtract(
+                            Vector2Add(
+                                (Vector2){.x = start_box.x, .y = start_box.y},
+                                (Vector2){.x = start_box.width/2.0f, .y = start_box.height/2.0f}
+                            ),
+                            Vector2Scale(
+                                start_size,
+                                1/2.0f
+                            )
+                        );
+    Vector2 hs_pos = Vector2Subtract(
+                            Vector2Add(
+                                (Vector2){.x = hs_box.x, .y = hs_box.y},
+                                (Vector2){.x = hs_box.width/2.0f, .y = hs_box.height/2.0f}
+                            ),
+                            Vector2Scale(
+                                hs_size,
+                                1/2.0f
+                            )
+                        );
+    Vector2 exit_pos = Vector2Subtract(
+                            Vector2Add(
+                                (Vector2){.x = exit_box.x, .y = exit_box.y},
+                                (Vector2){.x = exit_box.width/2.0f, .y = exit_box.height/2.0f}
+                            ),
+                            Vector2Scale(
+                                exit_size,
+                                1/2.0f
+                            )
+                        );
+
+    Vector2 cursor = GetMousePosition();
+    if (CheckCollisionPointRec(cursor, start_box)) {
+        start_box_color = BOX_COLOR_HOVERED;
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            HideCursor();
+            return GAME_PLAYING;
+        }
+    } else if (CheckCollisionPointRec(cursor, hs_box)) {
+        hs_box_color = BOX_COLOR_HOVERED;
+        /*
+           if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+           return GAME_PLAYING;
+           }
+         */
+    } else if (CheckCollisionPointRec(cursor, exit_box)) {
+        exit_box_color = BOX_COLOR_HOVERED;
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            return GAME_EXIT;
+        }
+    }
+
+    BeginDrawing();
+        ClearBackground(RAYWHITE);
+
+        DrawRectangleRec(start_box, start_box_color);
+        DrawRectangleRec(hs_box, hs_box_color);
+        DrawRectangleRec(exit_box, exit_box_color);
+
+        DrawTextEx(GetFontDefault(), start_text, start_pos, 40, 4, BLACK);
+        DrawTextEx(GetFontDefault(), hs_text, hs_pos, 40, 4, BLACK);
+        DrawTextEx(GetFontDefault(), exit_text, exit_pos, 40, 4, BLACK);
+    EndDrawing();
+
+    return GAME_START_MENU;
+}
 
 /**
  * Generate a random float between 0.0f and 1.0f (inclusive).
@@ -68,7 +180,18 @@ static Vector2 get_enemy_acceleration(Entity *enemy) {
     return result;
 }
 
-static bool gameplay_loop(Entity *player, Entity *enemy, Coin *coin) {
+static void reset_game_state(Entity *player, Entity *enemy, Coin *coin) {
+    player->position = (Vector2){.x = SCREEN_WIDTH/2.0f, .y = 2.0f*SCREEN_HEIGHT/3.0f};
+    player->velocity = Vector2Zero();
+    player->score = 0;
+
+    enemy->position = (Vector2){.x = SCREEN_WIDTH/2.0f, .y = SCREEN_HEIGHT/3.0f};
+    enemy->velocity = (Vector2){.x = rand_float()*PLAYER_MAX_V/2.0f, .y = rand_float()*PLAYER_MAX_V/2.0f};
+
+    coin->exists = false;
+}
+
+static GameState gameplay_loop(Entity *player, Entity *enemy, Coin *coin) {
     const float dt = GetFrameTime();
     bool collided = entity_elastic_collision(player, enemy);
 
@@ -77,7 +200,8 @@ static bool gameplay_loop(Entity *player, Entity *enemy, Coin *coin) {
             player->score--;
             sprintf(score_text, "Score: %d", player->score);
         } else {
-            return false;
+            ShowCursor();
+            return GAME_START_MENU;
         }
     }
 
@@ -109,7 +233,7 @@ static bool gameplay_loop(Entity *player, Entity *enemy, Coin *coin) {
         DrawText(score_text, 10, 10, 20, BLACK);
     EndDrawing();
 
-    return true;
+    return GAME_PLAYING;
 }
 
 int main(void) {
@@ -151,9 +275,23 @@ int main(void) {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sliding block");
     SetTargetFPS(FPS);
 
-    bool game_continue = true;
-    while (!WindowShouldClose() && game_continue) {
-        game_continue = gameplay_loop(&player, &enemy, &coin);
+    GameState state;
+    bool exit_game = false;
+    while (!WindowShouldClose() && !exit_game) {
+        switch (state) {
+            case GAME_START_MENU: {
+                state = start_menu();
+                reset_game_state(&player, &enemy, &coin);
+            } break;
+
+            case GAME_PLAYING: {
+                state = gameplay_loop(&player, &enemy, &coin);
+            } break;
+
+            case GAME_EXIT: {
+                exit_game = true;
+            } break;
+        }
     }
 
     CloseWindow();

@@ -20,8 +20,8 @@ cmake --build .
 [X] Enemy block that moves around
     Collisions with said enemy decrease the score
 [X] Collision at score 0 results in game over (close game)
-[ ] Start menu
-[ ] Collision at score 0 results in game over (return to start menu)
+[X] Start menu
+[X] Collision at score 0 results in game over (return to start menu)
 [X] Improve enemy movement
 [ ] High-score scoreboard
 ```
