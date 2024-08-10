@@ -20,6 +20,14 @@
 
 #define PLAYER_MAX_V 300.0f
 
+typedef struct Coin {
+    Rectangle sprite;
+    bool exists;
+    Color color;
+} Coin;
+
+char score_text[20] = "Score: 0";
+
 /**
  * Generate a random float between 0.0f and 1.0f (inclusive).
  */
@@ -60,6 +68,50 @@ static Vector2 get_enemy_acceleration(Entity *enemy) {
     return result;
 }
 
+static bool gameplay_loop(Entity *player, Entity *enemy, Coin *coin) {
+    const float dt = GetFrameTime();
+    bool collided = entity_elastic_collision(player, enemy);
+
+    if (collided) {
+        if (player->score > 0) {
+            player->score--;
+            sprintf(score_text, "Score: %d", player->score);
+        } else {
+            return false;
+        }
+    }
+
+    entity_move(player, get_player_acceleration(player), dt, SCREEN_WIDTH, SCREEN_HEIGHT);
+    entity_move(enemy, get_enemy_acceleration(enemy), dt, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    if (!coin->exists) {
+        do {
+            coin->sprite.x = rand() % (SCREEN_WIDTH - (int)coin->sprite.width);
+            coin->sprite.y = rand() % (SCREEN_HEIGHT - (int)coin->sprite.height);
+        } while (CheckCollisionRecs(coin->sprite, player->sprite));
+        coin->exists = true;
+    } else if (CheckCollisionRecs(coin->sprite, player->sprite)) {
+        coin->exists = false;
+        player->score++;
+        sprintf(score_text, "Score: %d", player->score);
+    }
+
+    BeginDrawing();
+        ClearBackground(RAYWHITE);
+
+        DrawRectangleRec(player->sprite, player->color);
+        DrawRectangleRec(enemy->sprite, enemy->color);
+
+        if (coin->exists) {
+            DrawRectangleRec(coin->sprite, coin->color);
+        }
+
+        DrawText(score_text, 10, 10, 20, BLACK);
+    EndDrawing();
+
+    return true;
+}
+
 int main(void) {
     srand(time(NULL));
 
@@ -87,59 +139,21 @@ int main(void) {
         .color = RED,
     };
 
-    struct { Rectangle sprite; bool exists; } coin = {
+    Coin coin = {
         .sprite = {
             .width = 10,
             .height = 20,
         },
+        .color = GOLD,
         .exists = false,
     };
-
-    char score_text[20] = "Score: 0";
 
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sliding block");
     SetTargetFPS(FPS);
 
-    while (!WindowShouldClose()) {
-        const float dt = GetFrameTime();
-        bool collided = entity_elastic_collision(&player, &enemy);
-
-        if (collided) {
-            if (player.score > 0) {
-                player.score--;
-                sprintf(score_text, "Score: %d", player.score);
-            } else {
-                break;
-            }
-        }
-
-        entity_move(&player, get_player_acceleration(&player), dt, SCREEN_WIDTH, SCREEN_HEIGHT);
-        entity_move(&enemy, get_enemy_acceleration(&enemy), dt, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-        if (!coin.exists) {
-            do {
-                coin.sprite.x = rand() % (SCREEN_WIDTH - (int)coin.sprite.width);
-                coin.sprite.y = rand() % (SCREEN_HEIGHT - (int)coin.sprite.height);
-            } while (CheckCollisionRecs(coin.sprite, player.sprite));
-            coin.exists = true;
-        } else if (CheckCollisionRecs(coin.sprite, player.sprite)) {
-            coin.exists = false;
-            player.score++;
-            sprintf(score_text, "Score: %d", player.score);
-        }
-
-        BeginDrawing();
-            ClearBackground(RAYWHITE);
-
-            DrawRectangleRec(player.sprite, player.color);
-            DrawRectangleRec(enemy.sprite, enemy.color);
-
-            if (coin.exists) {
-                DrawRectangleRec(coin.sprite, GOLD);
-            }
-
-            DrawText(score_text, 10, 10, 20, BLACK);
-        EndDrawing();
+    bool game_continue = true;
+    while (!WindowShouldClose() && game_continue) {
+        game_continue = gameplay_loop(&player, &enemy, &coin);
     }
 
     CloseWindow();
