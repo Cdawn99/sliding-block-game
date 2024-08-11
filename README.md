@@ -23,5 +23,12 @@ cmake --build .
 [X] Start menu
 [X] Collision at score 0 results in game over (return to start menu)
 [X] Improve enemy movement
-[ ] High-score scoreboard
+[X] High-score scoreboard
+[ ] Player and enemy have lives (player: 3, enemy: random or 5 or 7)
+    When enemy is defeated, game returns to initial state, but with
+    player's score carrying over.
+[ ] Enemy has randomly generated score, which is used as a reward for
+    the player for defeating it. Score also determines enemy colour.
+[ ] Every 5 rounds a stronger enemy generates (boss enemy)
+[ ] Make game over screen look better
 ```

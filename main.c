@@ -1,4 +1,5 @@
 #include "entity.h"
+#include "highscore.h"
 
 #include <raylib.h>
 #include <raymath.h>
@@ -14,8 +15,8 @@
 
 #define BOX_SPACING 10
 #define EXTRA_BOX_SIZE 15
-#define BOX_COLOR BLUE
-#define BOX_COLOR_HOVERED SKYBLUE
+#define BOX_COLOR SKYBLUE
+#define BOX_COLOR_HOVERED BLUE
 
 #define ACCELERATION_MAGNITUDE 100.0f
 #define FRICTION_COEFFICIENT 0.2f
@@ -28,6 +29,7 @@
 typedef enum GameState {
     GAME_START_MENU,
     GAME_PLAYING,
+    GAME_HIGHSCORE,
     GAME_EXIT,
 } GameState;
 
@@ -38,6 +40,7 @@ typedef struct Coin {
 } Coin;
 
 char score_text[20] = "Score: 0";
+unsigned int round_highscore;
 
 static GameState start_menu(void) {
     Vector2 center = {
@@ -113,11 +116,9 @@ static GameState start_menu(void) {
         }
     } else if (CheckCollisionPointRec(cursor, hs_box)) {
         hs_box_color = BOX_COLOR_HOVERED;
-        /*
-           if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-           return GAME_PLAYING;
-           }
-         */
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            return GAME_HIGHSCORE;
+        }
     } else if (CheckCollisionPointRec(cursor, exit_box)) {
         exit_box_color = BOX_COLOR_HOVERED;
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
@@ -137,6 +138,13 @@ static GameState start_menu(void) {
         DrawTextEx(GetFontDefault(), exit_text, exit_pos, 40, 4, BLACK);
     EndDrawing();
 
+    return GAME_START_MENU;
+}
+
+GameState hs_leaderboard(int screen_width, int screen_height) {
+    if (display_leaderboard(screen_width, screen_height)) {
+        return GAME_HIGHSCORE;
+    }
     return GAME_START_MENU;
 }
 
@@ -184,6 +192,7 @@ static void reset_game_state(Entity *player, Entity *enemy, Coin *coin) {
     player->position = (Vector2){.x = SCREEN_WIDTH/2.0f, .y = 2.0f*SCREEN_HEIGHT/3.0f};
     player->velocity = Vector2Zero();
     player->score = 0;
+    sprintf(score_text, "Score: %d", player->score);
 
     enemy->position = (Vector2){.x = SCREEN_WIDTH/2.0f, .y = SCREEN_HEIGHT/3.0f};
     enemy->velocity = (Vector2){.x = rand_float()*PLAYER_MAX_V/2.0f, .y = rand_float()*PLAYER_MAX_V/2.0f};
@@ -192,6 +201,13 @@ static void reset_game_state(Entity *player, Entity *enemy, Coin *coin) {
 }
 
 static GameState gameplay_loop(Entity *player, Entity *enemy, Coin *coin) {
+    if (IsKeyPressed(KEY_R)) {
+        add_potential_highscore(round_highscore, SCREEN_WIDTH, SCREEN_HEIGHT);
+        round_highscore = 0;
+        ShowCursor();
+        return GAME_START_MENU;
+    }
+
     const float dt = GetFrameTime();
     bool collided = entity_elastic_collision(player, enemy);
 
@@ -200,6 +216,8 @@ static GameState gameplay_loop(Entity *player, Entity *enemy, Coin *coin) {
             player->score--;
             sprintf(score_text, "Score: %d", player->score);
         } else {
+            add_potential_highscore(round_highscore, SCREEN_WIDTH, SCREEN_HEIGHT);
+            round_highscore = 0;
             ShowCursor();
             return GAME_START_MENU;
         }
@@ -216,7 +234,9 @@ static GameState gameplay_loop(Entity *player, Entity *enemy, Coin *coin) {
         coin->exists = true;
     } else if (CheckCollisionRecs(coin->sprite, player->sprite)) {
         coin->exists = false;
-        player->score++;
+        if (player->score < 9999) {
+            player->score++;
+        }
         sprintf(score_text, "Score: %d", player->score);
     }
 
@@ -272,10 +292,11 @@ int main(void) {
         .exists = false,
     };
 
+    load_highscores_from_disk();
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sliding block");
     SetTargetFPS(FPS);
 
-    GameState state;
+    GameState state = GAME_START_MENU;
     bool exit_game = false;
     while (!WindowShouldClose() && !exit_game) {
         switch (state) {
@@ -286,6 +307,13 @@ int main(void) {
 
             case GAME_PLAYING: {
                 state = gameplay_loop(&player, &enemy, &coin);
+                if (round_highscore < player.score) {
+                    round_highscore = player.score;
+                }
+            } break;
+
+            case GAME_HIGHSCORE: {
+                state = hs_leaderboard(SCREEN_WIDTH, SCREEN_HEIGHT);
             } break;
 
             case GAME_EXIT: {
@@ -295,5 +323,6 @@ int main(void) {
     }
 
     CloseWindow();
+    write_highscores_to_disk();
     return 0;
 }
