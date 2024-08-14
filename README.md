@@ -6,9 +6,9 @@ A game with a sliding block. Made using [raylib](https://www.raylib.com/)
 The project is built using CMake.
 
 ```
-mkdir build && cd build
-cmake ..
-cmake --build .
+$ mkdir build && cd build
+$ cmake ..
+$ cmake --build .
 ```
 
 ## Features checklist

@@ -42,15 +42,19 @@ static void get_score_name(unsigned int at_idx, int screen_width, int screen_hei
     textbox.y = (screen_height - textbox.height)/2.0f;
 
     char name[11] = {0};
-    unsigned int name_idx = 0;
+    unsigned int name_len = 0;
     while (true) {
         if (IsKeyPressed(KEY_ENTER)) {
             break;
         }
 
+        if (IsKeyPressed(KEY_BACKSPACE) && name_len > 0) {
+            name[--name_len] = '\0';
+        }
+
         int key = GetCharPressed();
-        if (key > 0 && name_idx < MAX_NAME_LEN && isalpha(key)) {
-            name[name_idx++] = (char)key;
+        if (key > 0 && name_len < MAX_NAME_LEN && isalpha(key)) {
+            name[name_len++] = (char)key;
         }
 
         BeginDrawing();
