@@ -12,6 +12,7 @@ typedef struct Entity {
     Vector2 velocity;
     float max_velocity; /**< The entity's max velocity must be positive. */
     unsigned int score;
+    unsigned int lives;
     Rectangle sprite;
     Color color;
 } Entity;

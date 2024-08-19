@@ -39,8 +39,10 @@ typedef struct Coin {
     Color color;
 } Coin;
 
-char score_text[20] = "Score: 0";
+char score_text[12] = "Score: 0"; // 7 for 'Score: ' + 4 for the score (up to 9999) + 1 for null terminator.
 unsigned int round_highscore;
+
+char lives_text[9] = "Lives: 0"; // 7 for 'Lives: ' + 1 for lives (up to 9) + 1 for null terminator.
 
 static GameState start_menu(void) {
     Vector2 center = {
@@ -193,9 +195,12 @@ static void reset_game_state(Entity *player, Entity *enemy, Coin *coin) {
     player->velocity = Vector2Zero();
     player->score = 0;
     sprintf(score_text, "Score: %d", player->score);
+    player->lives = 3;
+    sprintf(lives_text, "Lives: %d", player->lives);
 
     enemy->position = (Vector2){.x = SCREEN_WIDTH/2.0f, .y = SCREEN_HEIGHT/3.0f};
     enemy->velocity = (Vector2){.x = rand_float()*PLAYER_MAX_V/2.0f, .y = rand_float()*PLAYER_MAX_V/2.0f};
+    enemy->lives = 5;
 
     coin->exists = false;
 }
@@ -212,10 +217,9 @@ static GameState gameplay_loop(Entity *player, Entity *enemy, Coin *coin) {
     bool collided = entity_elastic_collision(player, enemy);
 
     if (collided) {
-        if (player->score > 0) {
-            player->score--;
-            sprintf(score_text, "Score: %d", player->score);
-        } else {
+        player->lives--;
+        sprintf(lives_text, "Lives: %d", player->lives);
+        if (player->lives == 0) {
             add_potential_highscore(round_highscore, SCREEN_WIDTH, SCREEN_HEIGHT);
             round_highscore = 0;
             ShowCursor();
@@ -238,6 +242,17 @@ static GameState gameplay_loop(Entity *player, Entity *enemy, Coin *coin) {
             player->score++;
         }
         sprintf(score_text, "Score: %d", player->score);
+
+        enemy->lives--;
+        if (enemy->lives == 0) {
+            unsigned int score = player->score;
+            unsigned int lives = player->lives;
+            reset_game_state(player, enemy, coin);
+            player->score = score;
+            sprintf(score_text, "Score: %d", player->score);
+            player->lives = lives;
+            sprintf(lives_text, "Lives: %d", player->lives);
+        }
     }
 
     BeginDrawing();
@@ -250,7 +265,8 @@ static GameState gameplay_loop(Entity *player, Entity *enemy, Coin *coin) {
             DrawRectangleRec(coin->sprite, coin->color);
         }
 
-        DrawText(score_text, 10, 10, 20, BLACK);
+        DrawText(lives_text, 10, 10, 20, BLACK);
+        DrawText(score_text, 10, 30, 20, BLACK);
     EndDrawing();
 
     return GAME_PLAYING;
@@ -264,6 +280,7 @@ int main(void) {
         .velocity = {0},
         .max_velocity = PLAYER_MAX_V,
         .score = 0,
+        .lives = 3,
         .sprite = {
             .width = ENTITY_WIDTH,
             .height = ENTITY_HEIGHT,
@@ -276,6 +293,7 @@ int main(void) {
         .velocity = {.x = rand_float()*PLAYER_MAX_V/2.0f, .y = rand_float()*PLAYER_MAX_V/2.0f},
         .max_velocity = PLAYER_MAX_V,
         .score = 1,
+        .lives = 5,
         .sprite = {
             .width = ENTITY_WIDTH,
             .height = ENTITY_HEIGHT,
