@@ -26,6 +26,8 @@
 
 #define PLAYER_MAX_V 300.0f
 
+#define ENEMY_MAX_SCORE 3
+
 typedef enum GameState {
     GAME_START_MENU,
     GAME_PLAYING,
@@ -190,6 +192,24 @@ static Vector2 get_enemy_acceleration(Entity *enemy) {
     return result;
 }
 
+static inline unsigned int get_enemy_score() {
+    return (rand() % ENEMY_MAX_SCORE) + 1;
+}
+
+static Color get_enemy_color(unsigned int score) {
+    switch (score) {
+    case 1:
+        return GREEN;
+    case 2:
+        return YELLOW;
+    case 3:
+        return RED;
+    default:
+        assert("Unreachable");
+        return RAYWHITE;
+    }
+}
+
 static void reset_game_state(Entity *player, Entity *enemy, Coin *coin) {
     player->position = (Vector2){.x = SCREEN_WIDTH/2.0f, .y = 2.0f*SCREEN_HEIGHT/3.0f};
     player->velocity = Vector2Zero();
@@ -201,6 +221,8 @@ static void reset_game_state(Entity *player, Entity *enemy, Coin *coin) {
     enemy->position = (Vector2){.x = SCREEN_WIDTH/2.0f, .y = SCREEN_HEIGHT/3.0f};
     enemy->velocity = (Vector2){.x = rand_float()*PLAYER_MAX_V/2.0f, .y = rand_float()*PLAYER_MAX_V/2.0f};
     enemy->lives = 5;
+    enemy->score = get_enemy_score();
+    enemy->color = get_enemy_color(enemy->score);
 
     coin->exists = false;
 }
@@ -245,7 +267,7 @@ static GameState gameplay_loop(Entity *player, Entity *enemy, Coin *coin) {
 
         enemy->lives--;
         if (enemy->lives == 0) {
-            unsigned int score = player->score;
+            unsigned int score = player->score + enemy->score;
             unsigned int lives = player->lives;
             reset_game_state(player, enemy, coin);
             player->score = score;
@@ -292,14 +314,14 @@ int main(void) {
         .position = {.x = SCREEN_WIDTH/2.0f, .y = SCREEN_HEIGHT/3.0f},
         .velocity = {.x = rand_float()*PLAYER_MAX_V/2.0f, .y = rand_float()*PLAYER_MAX_V/2.0f},
         .max_velocity = PLAYER_MAX_V,
-        .score = 1,
+        .score = get_enemy_score(),
         .lives = 5,
         .sprite = {
             .width = ENTITY_WIDTH,
             .height = ENTITY_HEIGHT,
         },
-        .color = RED,
     };
+    enemy.color = get_enemy_color(enemy.score);
 
     Coin coin = {
         .sprite = {
