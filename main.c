@@ -42,9 +42,12 @@ typedef struct Coin {
 } Coin;
 
 char score_text[12] = "Score: 0"; // 7 for 'Score: ' + 4 for the score (up to 9999) + 1 for null terminator.
-unsigned int round_highscore;
+char lives_text[9] = "Lives: 0";  // 7 for 'Lives: ' + 1 for lives (up to 9) + 1 for null terminator.
 
-char lives_text[9] = "Lives: 0"; // 7 for 'Lives: ' + 1 for lives (up to 9) + 1 for null terminator.
+static void update_text(Entity *player) {
+    sprintf(score_text, "Score: %d", player->score);
+    sprintf(lives_text, "Lives: %d", player->lives);
+}
 
 static GameState start_menu(void) {
     Vector2 center = {
@@ -214,9 +217,7 @@ static void reset_game_state(Entity *player, Entity *enemy, Coin *coin) {
     player->position = (Vector2){.x = SCREEN_WIDTH/2.0f, .y = 2.0f*SCREEN_HEIGHT/3.0f};
     player->velocity = Vector2Zero();
     player->score = 0;
-    sprintf(score_text, "Score: %d", player->score);
     player->lives = 3;
-    sprintf(lives_text, "Lives: %d", player->lives);
 
     enemy->position = (Vector2){.x = SCREEN_WIDTH/2.0f, .y = SCREEN_HEIGHT/3.0f};
     enemy->velocity = (Vector2){.x = rand_float()*PLAYER_MAX_V/2.0f, .y = rand_float()*PLAYER_MAX_V/2.0f};
@@ -229,9 +230,8 @@ static void reset_game_state(Entity *player, Entity *enemy, Coin *coin) {
 
 static GameState gameplay_loop(Entity *player, Entity *enemy, Coin *coin) {
     if (IsKeyPressed(KEY_R)) {
-        add_potential_highscore(round_highscore, SCREEN_WIDTH, SCREEN_HEIGHT);
-        round_highscore = 0;
         ShowCursor();
+        add_potential_highscore(player->score, SCREEN_WIDTH, SCREEN_HEIGHT);
         return GAME_START_MENU;
     }
 
@@ -240,11 +240,9 @@ static GameState gameplay_loop(Entity *player, Entity *enemy, Coin *coin) {
 
     if (collided) {
         player->lives--;
-        sprintf(lives_text, "Lives: %d", player->lives);
         if (player->lives == 0) {
-            add_potential_highscore(round_highscore, SCREEN_WIDTH, SCREEN_HEIGHT);
-            round_highscore = 0;
             ShowCursor();
+            add_potential_highscore(player->score, SCREEN_WIDTH, SCREEN_HEIGHT);
             return GAME_START_MENU;
         }
     }
@@ -263,7 +261,6 @@ static GameState gameplay_loop(Entity *player, Entity *enemy, Coin *coin) {
         if (player->score < 9999) {
             player->score++;
         }
-        sprintf(score_text, "Score: %d", player->score);
 
         enemy->lives--;
         if (enemy->lives == 0) {
@@ -271,12 +268,11 @@ static GameState gameplay_loop(Entity *player, Entity *enemy, Coin *coin) {
             unsigned int lives = player->lives;
             reset_game_state(player, enemy, coin);
             player->score = score;
-            sprintf(score_text, "Score: %d", player->score);
             player->lives = lives;
-            sprintf(lives_text, "Lives: %d", player->lives);
         }
     }
 
+    update_text(player);
     BeginDrawing();
         ClearBackground(RAYWHITE);
 
@@ -342,14 +338,13 @@ int main(void) {
         switch (state) {
             case GAME_START_MENU: {
                 state = start_menu();
-                reset_game_state(&player, &enemy, &coin);
+                if (state != GAME_START_MENU) {
+                    reset_game_state(&player, &enemy, &coin);
+                }
             } break;
 
             case GAME_PLAYING: {
                 state = gameplay_loop(&player, &enemy, &coin);
-                if (round_highscore < player.score) {
-                    round_highscore = player.score;
-                }
             } break;
 
             case GAME_HIGHSCORE: {

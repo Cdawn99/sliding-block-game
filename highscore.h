@@ -7,8 +7,6 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef struct Highscore Highscore;
-
 /**
  * Add a pontential highscore to a list of top 10 highscores. If the given score is zero,
  * the function does nothing.

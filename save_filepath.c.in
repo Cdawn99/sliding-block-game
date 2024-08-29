@@ -1,0 +1,3 @@
+#include "@CMAKE_CURRENT_SOURCE_DIR@/save_filepath.h"
+
+const char *save_path = "@CMAKE_CURRENT_BINARY_DIR@/save.csv";

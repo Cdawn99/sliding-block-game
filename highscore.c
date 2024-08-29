@@ -1,4 +1,5 @@
 #include "highscore.h"
+#include "save_filepath.h"
 
 #define MAX_NAME_LEN 10
 #define MAX_HS_COUNT 10
@@ -9,10 +10,10 @@
 #define BOX_COLOR SKYBLUE
 #define BOX_COLOR_HOVERED BLUE
 
-struct Highscore {
+typedef struct {
     char name[MAX_NAME_LEN + 1];
     unsigned int score;
-};
+} Highscore;
 
 Highscore hs[MAX_HS_COUNT];
 unsigned int hs_count = 0;
@@ -142,9 +143,9 @@ bool display_leaderboard(int screen_width, int screen_height) {
 }
 
 void load_highscores_from_disk(void) {
-    char *save_text = LoadFileText("save.csv");
+    char *save_text = LoadFileText(save_path);
     if (!save_text) {
-        printf("ERROR: Failed to open \"save.csv\"");
+        TraceLog(LOG_WARNING, "Failed to open %s", save_path);
         return;
     }
 
@@ -191,8 +192,8 @@ void write_highscores_to_disk(void) {
         strcat(save_text, temp);
     }
 
-    bool succ = SaveFileText("save.csv", save_text);
+    bool succ = SaveFileText(save_path, save_text);
     if (!succ) {
-        printf("ERROR: Failed to save to disk");
+        TraceLog(LOG_ERROR, "ERROR: Failed to save to %s", save_path);
     }
 }

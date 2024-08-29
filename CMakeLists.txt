@@ -5,5 +5,7 @@ set(CMAKE_C_STANDARD 11)
 
 find_package(raylib 3.0 REQUIRED)
 
-add_executable(${PROJECT_NAME} main.c entity.c highscore.c)
+configure_file(save_filepath.c.in ${CMAKE_CURRENT_BINARY_DIR}/save_filepath.c @ONLY)
+
+add_executable(${PROJECT_NAME} main.c entity.c highscore.c ${CMAKE_CURRENT_BINARY_DIR}/save_filepath.c)
 target_link_libraries(${PROJECT_NAME} raylib m)
